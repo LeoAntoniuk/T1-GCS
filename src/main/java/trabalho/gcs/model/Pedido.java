@@ -8,7 +8,7 @@ public class Pedido {
     private final Usuario solicitador;
     private final Departamento departamento;
     private final String dataPedido;
-    private final String dataConclusao;
+    private String dataConclusao;
     private StatusPedido status;
     private final List<ItemPedido> itens = new ArrayList<>();
 

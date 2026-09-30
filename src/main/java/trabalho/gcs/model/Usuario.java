@@ -1,13 +1,15 @@
 package trabalho.gcs.model;
 
-public abstract class Usuario {
+public class Usuario {
     private final int id;
     private final String nome;
+    private final TipoUsuario tipo;
     private final Departamento departamento;
 
-    public Usuario(int id, String nome, Departamento departamento) {
+    public Usuario(int id, String nome, TipoUsuario tipo, Departamento departamento) {
         this.id = id;
         this.nome = nome;
+        this.tipo = tipo;
         this.departamento = departamento;
     }
 
@@ -19,24 +21,30 @@ public abstract class Usuario {
         return nome;
     }
 
+    public TipoUsuario getTipo() {
+        return tipo;
+    }
+
     public Departamento getDepartamento() {
         return departamento;
     }
 
-    public String getIniciais() {
-        String[] partes = nome.trim().split("\\s+");
-
-        if (partes.length == 1) {
-            return partes[0].substring(0, 1).toUpperCase();
-        }
-
-        return (partes[0].substring(0, 1) + partes[partes.length - 1].substring(0, 1)).toUpperCase();
+    public boolean isAdministrador() {
+        return tipo == TipoUsuario.ADMINISTRADOR;
     }
 
-    public abstract TipoUsuario getTipo();
+    public String getIniciais() {
+        StringBuilder sb = new StringBuilder();
+        for (String parte : nome.trim().split("\\s+")) {
+            if (parte.length() > 2 || parte.equals(parte.toUpperCase())) {
+                sb.append(Character.toUpperCase(parte.charAt(0)));
+            }
+        }
+        return sb.toString();
+    }
 
     @Override
     public String toString() {
-        return "[" + id + "] - " + nome + " (" + getIniciais() + ")";
+        return String.format("[%2d] %-25s (%s) - %-13s - %s", id, nome, getIniciais(), tipo.getDescricao(), departamento.getNome());
     }
 }

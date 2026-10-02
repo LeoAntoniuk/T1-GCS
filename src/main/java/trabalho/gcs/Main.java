@@ -100,42 +100,50 @@ public class Main {
         if (!u.isAdministrador()) throw new IllegalStateException("Opção exclusiva para administradores.");
     }
 
-    private static void registarPedidoMenu(Sistema sistema, Scanner scanner) {
-        System.out.println("\n--- Registar Novo Pedido ---");
-        List<ItemPedido> itens = new ArrayList<>();
-        boolean adicionarMais = true;
+private static void registarPedidoMenu(Sistema sistema, Scanner scanner) {
+    System.out.println("\n--- Registar Novo Pedido ---");
+    List<ItemPedido> itens = new ArrayList<>();
+    boolean adicionarMais = true;
 
-        while (adicionarMais) {
-            System.out.print("Descrição do item: ");
-            String desc = scanner.nextLine();
-            if (desc.trim().isEmpty()) {
-                System.out.println("Descrição não pode ser vazia.");
-                continue;
-            }
-
-            System.out.print("Valor unitário: R$ ");
-            double valor = lerDouble(scanner);
-            System.out.print("Quantidade: ");
-            int qtd = lerInteiro(scanner);
-
-            try {
-                itens.add(new ItemPedido(desc, valor, qtd));
-                System.out.println("Item adicionado com sucesso.");
-            } catch (IllegalArgumentException e) {
-                System.out.println("Erro ao adicionar item: " + e.getMessage());
-            }
-
-            System.out.print("Deseja adicionar mais itens? (S/N): ");
-            adicionarMais = scanner.nextLine().trim().equalsIgnoreCase("S");
+    while (adicionarMais) {
+        System.out.print("Descrição do item: ");
+        String descricao = scanner.nextLine();
+        if (descricao.trim().isEmpty()) {
+            System.out.println("Descrição não pode ser vazia.");
+            continue;
         }
 
-        if (!itens.isEmpty()) {
-            Pedido p = sistema.registrarPedido(itens);
-            System.out.println("Pedido registado com sucesso! ID: " + p.getId());
-        } else {
-            System.out.println("Registo cancelado: nenhum item inserido.");
-        }
+        adicionarItem(itens, descricao, scanner);
+        adicionarMais = adicionarMaisItens(scanner);
     }
+
+    if (itens.isEmpty()) {
+        System.out.println("Registo cancelado: nenhum item inserido.");
+        return;
+    }
+
+    Pedido pedido = sistema.registrarPedido(itens);
+    System.out.println("Pedido registado com sucesso! ID: " + pedido.getId());
+}
+
+private static void adicionarItem(List<ItemPedido> itens, String descricao, Scanner scanner) {
+    System.out.print("Valor unitário: R$ ");
+    double valorUnitario = lerDouble(scanner);
+    System.out.print("Quantidade: ");
+    int quantidade = lerInteiro(scanner);
+
+    try {
+        itens.add(new ItemPedido(descricao, valorUnitario, quantidade));
+        System.out.println("Item adicionado com sucesso.");
+    } catch (IllegalArgumentException e) {
+        System.out.println("Erro ao adicionar item: " + e.getMessage());
+    }
+}
+
+private static boolean adicionarMaisItens(Scanner scanner) {
+    System.out.print("Deseja adicionar mais itens? (S/N): ");
+    return scanner.nextLine().trim().equalsIgnoreCase("S");
+}
 
     private static void excluirPedidoMenu(Sistema sistema, Scanner scanner) {
         System.out.print("\nIntroduza o ID do pedido que deseja excluir: ");

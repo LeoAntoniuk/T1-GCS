@@ -1,6 +1,4 @@
-package trabalho.gcs;
-
-import trabalho.gcs.model.*;
+package trabalho.gcs.model;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -9,9 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class Main {
+public class App {
 
-    public static void main(String[] args) {
+    public void run() {
         Sistema sistema = new Sistema();
         inicializarDados(sistema);
 

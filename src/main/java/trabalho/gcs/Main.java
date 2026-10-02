@@ -16,7 +16,6 @@ public class Main {
         inicializarDados(sistema);
 
         Scanner scanner = new Scanner(System.in);
-        int opcao;
 
         System.out.println("=== Sistema de Controlo de Aquisições ===");
 
@@ -60,14 +59,15 @@ public class Main {
             System.out.println("1. Registar novo pedido");
             System.out.println("2. Ver os meus pedidos");
             System.out.println("3. Excluir um pedido meu (apenas abertos)");
+            System.out.println("4. Ver detalhes de um pedido");
 
             if (atual.isAdministrador()) {
-                System.out.println("4. Avaliar pedido (Aprovar/Rejeitar)");
-                System.out.println("5. Concluir pedido aprovado");
-                System.out.println("6. Listar todos os pedidos entre datas");
-                System.out.println("7. Buscar pedidos por funcionário solicitante");
-                System.out.println("8. Buscar pedidos por descrição de item");
-                System.out.println("9. Ver estatísticas gerais");
+                System.out.println("5. Avaliar pedido (Aprovar/Rejeitar)");
+                System.out.println("6. Concluir pedido aprovado");
+                System.out.println("7. Listar todos os pedidos entre datas");
+                System.out.println("8. Buscar pedidos por funcionário solicitante");
+                System.out.println("9. Buscar pedidos por descrição de item");
+                System.out.println("10. Ver estatísticas gerais");
             }
 
             System.out.println("0. Trocar de Utilizador");
@@ -79,12 +79,13 @@ public class Main {
                     case 1: registarPedidoMenu(sistema, scanner); break;
                     case 2: listarPedidos(sistema.pedidosDoUsuarioAtual()); break;
                     case 3: excluirPedidoMenu(sistema, scanner); break;
-                    case 4: seAdmin(atual); avaliarPedidoMenu(sistema, scanner); break;
-                    case 5: seAdmin(atual); concluirPedidoMenu(sistema, scanner); break;
-                    case 6: seAdmin(atual); listarEntreDatasMenu(sistema, scanner); break;
-                    case 7: seAdmin(atual); buscarPorSolicitanteMenu(sistema, scanner); break;
-                    case 8: seAdmin(atual); buscarPorItemMenu(sistema, scanner); break;
-                    case 9: seAdmin(atual); System.out.println("\n" + sistema.estatisticas()); break;
+                    case 4: verDetalhesMenu(sistema, scanner); break;
+                    case 5: seAdmin(atual); avaliarPedidoMenu(sistema, scanner); break;
+                    case 6: seAdmin(atual); concluirPedidoMenu(sistema, scanner); break;
+                    case 7: seAdmin(atual); listarEntreDatasMenu(sistema, scanner); break;
+                    case 8: seAdmin(atual); buscarPorSolicitanteMenu(sistema, scanner); break;
+                    case 9: seAdmin(atual); buscarPorItemMenu(sistema, scanner); break;
+                    case 10: seAdmin(atual); System.out.println("\n" + sistema.estatisticas()); break;
                     case 0: System.out.println("A terminar sessão do utilizador..."); break;
                     default: System.out.println("Opção inválida!");
                 }
@@ -146,6 +147,21 @@ public class Main {
         }
         sistema.excluirPedido(p);
         System.out.println("Pedido excluído com sucesso.");
+    }
+
+    private static void verDetalhesMenu(Sistema sistema, Scanner scanner) {
+        System.out.print("\nIntroduza o ID do pedido: ");
+        int id = lerInteiro(scanner);
+        Pedido p = sistema.buscarPedido(id);
+        if (p == null) {
+            System.out.println("Pedido não encontrado.");
+            return;
+        }
+        Usuario atual = sistema.getUsuarioAtual();
+        if (!atual.isAdministrador() && p.getSolicitante() != atual) {
+            throw new IllegalStateException("Só pode consultar os detalhes dos seus próprios pedidos.");
+        }
+        System.out.println("\n" + p.detalhes());
     }
 
     private static void avaliarPedidoMenu(Sistema sistema, Scanner scanner) {
@@ -249,6 +265,13 @@ public class Main {
         }
     }
 
+    private static Pedido novoPedido(Sistema sistema, int idSolicitante, int diasAtras, ItemPedido... itens) {
+        return sistema.registrarPedido(
+                sistema.buscarUsuario(idSolicitante),
+                LocalDate.now().minusDays(diasAtras),
+                List.of(itens));
+    }
+
     private static void inicializarDados(Sistema sistema) {
         Departamento d1 = new Departamento(1, "Financeiro", 50000);
         Departamento d2 = new Departamento(2, "RH", 15000);
@@ -283,29 +306,62 @@ public class Main {
         sistema.adicionarUsuario(new Usuario(15, "Otávio Mendes", TipoUsuario.FUNCIONARIO, d5));
 
         sistema.setUsuarioAtual(sistema.buscarUsuario(2));
-        Pedido p1 = sistema.registrarPedido(List.of(
+        Pedido p1 = novoPedido(sistema, 2, 75,
                 new ItemPedido("Cadeiras de Escritório", 450.00, 5),
-                new ItemPedido("Mesa de Reunião", 1200.00, 1)
-        ));
-
-        sistema.setUsuarioAtual(sistema.buscarUsuario(14));
-        Pedido p2 = sistema.registrarPedido(List.of(
-                new ItemPedido("Monitor Dell 27", 1500.00, 4)
-        ));
-
-        sistema.setUsuarioAtual(sistema.buscarUsuario(7));
-        Pedido p3 = sistema.registrarPedido(List.of(
+                new ItemPedido("Mesa de Reunião", 1200.00, 1));
+        Pedido p2 = novoPedido(sistema, 14, 40,
+                new ItemPedido("Monitor Dell 27", 1500.00, 4));
+        Pedido p3 = novoPedido(sistema, 7, 28,
                 new ItemPedido("Multímetro Digital", 350.00, 2),
-                new ItemPedido("Estação de Solda", 850.00, 1)
-        ));
-
+                new ItemPedido("Estação de Solda", 850.00, 1));
+        Pedido p4 = novoPedido(sistema, 5, 22,
+                new ItemPedido("Licenças de Software de Folha", 3200.00, 2),
+                new ItemPedido("Formação Online", 900.00, 3));
+        Pedido p5 = novoPedido(sistema, 10, 18,
+                new ItemPedido("Compressor de Ar", 7800.00, 1),
+                new ItemPedido("Kit de Ferramentas", 640.00, 3));
+        Pedido p6 = novoPedido(sistema, 3, 12,
+                new ItemPedido("Notebook", 4800.00, 4),
+                new ItemPedido("Rato sem fios", 90.00, 4));
+        Pedido p7 = novoPedido(sistema, 8, 9,
+                new ItemPedido("Impressora 3D", 12500.00, 1),
+                new ItemPedido("Filamento PLA", 120.00, 10));
+        novoPedido(sistema, 15, 6,
+                new ItemPedido("Servidor de Rede", 32000.00, 1),
+                new ItemPedido("Switch 24 portas", 2800.00, 2));
+        novoPedido(sistema, 11, 3,
+                new ItemPedido("Capacete de Segurança", 45.00, 20),
+                new ItemPedido("Luvas Industriais", 28.00, 40));
+        novoPedido(sistema, 6, 2,
+                new ItemPedido("Cadeira Ergonómica", 780.00, 6));
+        novoPedido(sistema, 2, 1,
+                new ItemPedido("Papel A4 (caixa)", 260.00, 10));
+        novoPedido(sistema, 14, 0,
+                new ItemPedido("Monitor Dell 27", 1500.00, 2),
+                new ItemPedido("Webcam HD", 220.00, 2));
+        novoPedido(sistema, 7, 0,
+                new ItemPedido("Osciloscópio Digital", 6200.00, 1));
+ 
+        // Avaliações feitas por administradores
         sistema.setUsuarioAtual(sistema.buscarUsuario(1));
         sistema.avaliarPedido(p1, true);
         sistema.concluirPedido(p1);
-
+        sistema.avaliarPedido(p6, false);
+ 
         sistema.setUsuarioAtual(sistema.buscarUsuario(13));
         sistema.avaliarPedido(p2, false);
-
+ 
+        sistema.setUsuarioAtual(sistema.buscarUsuario(9));
+        sistema.avaliarPedido(p3, true);
+        sistema.avaliarPedido(p7, true);
+ 
+        sistema.setUsuarioAtual(sistema.buscarUsuario(4));
+        sistema.avaliarPedido(p4, true);
+        sistema.concluirPedido(p4);
+ 
+        sistema.setUsuarioAtual(sistema.buscarUsuario(12));
+        sistema.avaliarPedido(p5, true);
+ 
         sistema.setUsuarioAtual(null);
     }
 }

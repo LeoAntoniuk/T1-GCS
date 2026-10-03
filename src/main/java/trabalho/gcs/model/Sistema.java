@@ -145,42 +145,82 @@ public class Sistema {
 
     public String estatisticas() {
         exigirAdministrador();
-        int total = pedidos.size();
-        int aprovados = 0;
-        int reprovados = 0;
-        int ultimos30 = 0;
-        double somaUltimos30 = 0;
-        Pedido maiorAberto = null;
-        LocalDate limite30 = LocalDate.now().minusDays(30);
 
-        for (Pedido p : pedidos) {
-            if (p.getStatus() == StatusPedido.APROVADO || p.getStatus() == StatusPedido.CONCLUIDO) {
-                aprovados++;
-            } else if (p.getStatus() == StatusPedido.REPROVADO) {
-                reprovados++;
-            }
-            if (!p.getDataPedido().isBefore(limite30)) {
-                ultimos30++;
-                somaUltimos30 += p.getValorTotal();
-            }
-            if (p.isAberto() && (maiorAberto == null || p.getValorTotal() > maiorAberto.getValorTotal())) {
-                maiorAberto = p;
-            }
-        }
+        int total      = pedidos.size();
+        int aprovados  = contarPorStatus(StatusPedido.APROVADO);
+        int concluidos = contarPorStatus(StatusPedido.CONCLUIDO);
+        int reprovados = contarPorStatus(StatusPedido.REPROVADO);
+        int abertos    = contarPorStatus(StatusPedido.ABERTO);
+        double valorTotal = somarValores(pedidos);
+
+        List<Pedido> ultimos30 = pedidosDesde(LocalDate.now().minusDays(30));
+        double valorUltimos30  = somarValores(ultimos30);
+        double mediaUltimos30  = ultimos30.isEmpty() ? 0 : valorUltimos30 / ultimos30.size();
+
+        Pedido maiorAberto = maiorPedidoAberto();
 
         StringBuilder sb = new StringBuilder();
-        sb.append("Total de pedidos: ").append(total).append('\n');
-        sb.append(String.format("  Aprovados : %3d (%.1f%%)%n", aprovados, percentual(aprovados, total)));
-        sb.append(String.format("  Reprovados: %3d (%.1f%%)%n", reprovados, percentual(reprovados, total)));
-        sb.append(String.format("  Abertos   : %3d (%.1f%%)%n",
-                total - aprovados - reprovados, percentual(total - aprovados - reprovados, total)));
+
+        sb.append("=== Estatísticas Gerais ===\n");
+        sb.append(String.format("Total de pedidos: %d  (valor acumulado: R$ %,.2f)%n", total, valorTotal));
+        sb.append(linhaStatus("Aprovados",  aprovados + concluidos, total));
+        sb.append(linhaStatus("  - Concluídos", concluidos, total));
+        sb.append(linhaStatus("Reprovados", reprovados, total));
+        sb.append(linhaStatus("Abertos",    abertos, total));
         sb.append('\n');
-        sb.append("Pedidos nos últimos 30 dias: ").append(ultimos30).append('\n');
-        sb.append(String.format("  Valor médio: R$ %,.2f%n", ultimos30 == 0 ? 0 : somaUltimos30 / ultimos30));
+
+        sb.append("Últimos 30 dias:\n");
+        sb.append(String.format("  Pedidos    : %d%n", ultimos30.size()));
+        sb.append(String.format("  Valor total: R$ %,.2f%n", valorUltimos30));
+        sb.append(String.format("  Valor médio: R$ %,.2f%n", mediaUltimos30));
         sb.append('\n');
+
         sb.append("Pedido aberto de maior valor:\n");
         sb.append(maiorAberto == null ? "  (nenhum pedido aberto)" : maiorAberto.detalhes());
+
         return sb.toString();
+    }
+
+    private int contarPorStatus(StatusPedido status) {
+        int count = 0;
+        for (Pedido p : pedidos) {
+            if (p.getStatus() == status) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static double somarValores(List<Pedido> lista) {
+        double soma = 0;
+        for (Pedido p : lista) {
+            soma += p.getValorTotal();
+        }
+        return soma;
+    }
+
+    private List<Pedido> pedidosDesde(LocalDate data) {
+        List<Pedido> resultado = new ArrayList<>();
+        for (Pedido p : pedidos) {
+            if (!p.getDataPedido().isBefore(data)) {
+                resultado.add(p);
+            }
+        }
+        return resultado;
+    }
+
+    private Pedido maiorPedidoAberto() {
+        Pedido maior = null;
+        for (Pedido p : pedidos) {
+            if (p.isAberto() && (maior == null || p.getValorTotal() > maior.getValorTotal())) {
+                maior = p;
+            }
+        }
+        return maior;
+    }
+
+    private static String linhaStatus(String rotulo, int quantidade, int total) {
+        return String.format("  %-14s %3d  (%5.1f%%)%n", rotulo + ":", quantidade, percentual(quantidade, total));
     }
 
     private static double percentual(int parte, int total) {
